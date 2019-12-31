@@ -1,10 +1,10 @@
 module.exports = {
   name: 'backup',
   description:
-    'Creates a backup of a server if you have ADMINISTRATOR permissions on it',
+    'Creates a backup of a server if you have ADMINISTRATOR permissions in it',
   cooldown: 10,
   aliases: ['bu', 'b'],
-  usage: '[ID]',
+  usage: '[ServerID]',
   //args: true,
   async execute(message, args) {
     const client = message.client
@@ -45,7 +45,6 @@ module.exports = {
 
     backup.roles = guild.roles
       .filter(role => !role.managed) // Don't want to backup managed roles
-      .filter(role => role.id !== guild.id) // Don't want to backup the @everyone role
       .map(role => ({
         id: role.id,
         name: role.name,
