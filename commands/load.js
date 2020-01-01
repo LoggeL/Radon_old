@@ -10,6 +10,10 @@ module.exports = {
   args: true,
   guildOnly: true,
   async execute(message, args) {
+    // ToDo
+    // Support DM loads
+    // Check own permissions
+
     const client = message.client
 
     const guild = message.guild
@@ -33,7 +37,7 @@ module.exports = {
       return message.reply("Coulnd't find the backup in our DM history")
 
     //Prevent loading 3rd party backups :P
-    if (backupMessage.author != client.user)
+    if (backupMessage.author !== client.user)
       return message.reply('This is not an official backup')
 
     const backupAttachment = backupMessage.attachments.first()
@@ -42,6 +46,15 @@ module.exports = {
     const backup = await fetch(backupAttachment.url).then(response =>
       response.json()
     )
-    console.log(backup)
+
+    // Purge Server
+    guild.channels.forEach(channel =>
+      channel.delete(`Backup loaded by ${member.user.tag}`)
+    )
+    guild.roles
+      .filter(role => role.deletable)
+      .forEach(role => role.delete(`Backup loaded by ${member.user.tag}`))
+
+    // Load Backup
   },
 }
