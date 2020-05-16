@@ -1,3 +1,5 @@
+const compress = require('iltorb').compressSync;
+
 module.exports = {
   name: 'backup',
   description:
@@ -10,10 +12,10 @@ module.exports = {
     const client = message.client
     if (!args && !message.guild) return message.reply('Server ID needed')
 
-    const guild = args[0] ? client.guilds.get(args[0]) : message.guild
+    const guild = args[0] ? client.guilds.cache.get(args[0]) : message.guild
     if (!guild) return message.reply('Invalid Server ID!')
 
-    let member = guild.members.get(message.author.id)
+    let member = guild.members.cache.get(message.author.id)
     if (!member) member = await guild.fetchMember(message.author.id)
     if (!member) return message.reply("Can't find you in the Server")
 
@@ -26,7 +28,7 @@ module.exports = {
     let backup = {}
     backup.version = 1 // For possible incompatibilities
 
-    backup.channels = guild.channels.map(channel => ({
+    backup.channels = guild.channels.cache.map(channel => ({
       id: channel.id,
       name: channel.name,
       type: channel.type,
@@ -34,16 +36,16 @@ module.exports = {
       parentID: channel.parentID,
       permissionOverwrites: channel.permissionOverwrites
         ? channel.permissionOverwrites
-            .map(permisson => ({
-              allow: permisson.allow,
-              deny: permisson.deny,
-              id: permisson.id,
-            }))
-            .filter(permission => guild.roles.get(permission.id))
+          .map(permisson => ({
+            allow: permisson.allow,
+            deny: permisson.deny,
+            id: permisson.id,
+          }))
+          .filter(permission => guild.roles.cache.get(permission.id))
         : null, // Only role overrides
     }))
 
-    backup.roles = guild.roles
+    backup.roles = guild.roles.cache
       .filter(role => !role.managed) // Don't want to backup managed roles
       .map(role => ({
         id: role.id,
@@ -62,8 +64,8 @@ module.exports = {
             name: `${guild.name}_${new Date()
               .toISOString()
               .split('T')
-              .shift()}.json`,
-            attachment: Buffer.from(JSON.stringify(backup)),
+              .shift()}.rdn`,
+            attachment: compress(Buffer.from(JSON.stringify(backup))),
           },
         ],
       })

@@ -1,4 +1,5 @@
 const fetch = require('node-fetch')
+const decompress = require('iltorb').decompressSync;
 
 module.exports = {
   name: 'load',
@@ -20,7 +21,7 @@ module.exports = {
 
     if (!guild) return message.reply('Invalid Server')
 
-    let member = guild.members.get(message.author.id)
+    let member = guild.members.cache.get(message.author.id)
     if (!member) member = await guild.fetchMember(message.author.id)
     if (!member) return message.reply("Can't find you in the Server")
 
@@ -43,18 +44,21 @@ module.exports = {
     const backupAttachment = backupMessage.attachments.first()
     if (!backupAttachment) return message.reply("Didn't find the backup file")
 
-    const backup = await fetch(backupAttachment.url).then(response =>
-      response.json()
-    )
+    fetch(backupAttachment.url)
+      .then(response => response.buffer())
+      .then(backupBuffer => decompress(backupBuffer))
+      .then(backupString => { console.log(backupString.toString()); JSON.parse(backupString.toString('utf-8')) })
+      .then(backup => {
 
-    // Purge Server
-    guild.channels.forEach(channel =>
-      channel.delete(`Backup loaded by ${member.user.tag}`)
-    )
-    guild.roles
-      .filter(role => role.deletable)
-      .forEach(role => role.delete(`Backup loaded by ${member.user.tag}`))
+        // Purge Server
+        guild.channels.forEach(channel =>
+          channel.delete(`Backup loaded by ${member.user.tag}`)
+        )
+        guild.roles
+          .filter(role => role.deletable)
+          .forEach(role => role.delete(`Backup loaded by ${member.user.tag}`))
 
-    // Load Backup
-  },
+        // Load Backup
+      }).catch(console.error)
+  }
 }
